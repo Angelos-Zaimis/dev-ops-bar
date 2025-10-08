@@ -1,0 +1,41 @@
+# Environment
+.env
+
+# Logs
+docker-compose-files/log/*
+logs/
+*.log
+
+# Volumes
+volumes/
+data/
+
+# Backups
+backups/
+*.sql
+*.sql.enc
+
+# Ansible
+ansible/.vault_pass
+ansible/vault/secrets.yml
+ansible/*.log
+ansible/.ansible_*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Docker
+docker-compose.override.yml
+
+# Temporary files
+*.tmp
+*.bak
+

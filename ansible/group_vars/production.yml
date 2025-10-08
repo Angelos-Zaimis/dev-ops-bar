@@ -1,0 +1,12 @@
+---
+environment: production
+
+postgres_max_connections: 200
+postgres_shared_buffers: 256MB
+
+kafka_heap_opts: "-Xms512m -Xmx2g"
+java_opts: "-Xms512m -Xmx2g -XX:+UseG1GC"
+
+backup_retention_days: 30
+log_retention_days: 14
+

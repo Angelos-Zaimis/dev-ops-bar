@@ -1,0 +1,68 @@
+---
+- name: Backup databases
+  hosts: db_servers
+  become: true
+  
+  vars_files:
+    - ../vault/secrets.yml
+  
+  vars:
+    backup_timestamp: "{{ ansible_date_time.date }}_{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}"
+  
+  tasks:
+    - name: Create backup directory
+      file:
+        path: "{{ backup_directory }}/{{ backup_timestamp }}"
+        state: directory
+        mode: '0750'
+        owner: "{{ deployment_user }}"
+    
+    - name: Backup ServiceDB
+      shell: |
+        docker exec servicedb pg_dump -U {{ postgres_user | default('testuser') }} \
+          datasource_servicedb > {{ backup_directory }}/{{ backup_timestamp }}/servicedb.sql
+      args:
+        executable: /bin/bash
+    
+    - name: Backup InventoryDB
+      shell: |
+        docker exec inventorydb pg_dump -U {{ postgres_user | default('testuser') }} \
+          datasource_inventorydb > {{ backup_directory }}/{{ backup_timestamp }}/inventorydb.sql
+      args:
+        executable: /bin/bash
+    
+    - name: Encrypt backups
+      shell: |
+        openssl enc -aes-256-cbc -salt -pbkdf2 \
+          -in {{ item }} \
+          -out {{ item }}.enc \
+          -k "{{ vault_db_backup_encryption_key }}"
+      loop:
+        - "{{ backup_directory }}/{{ backup_timestamp }}/servicedb.sql"
+        - "{{ backup_directory }}/{{ backup_timestamp }}/inventorydb.sql"
+      no_log: true
+      when: vault_db_backup_encryption_key is defined
+    
+    - name: Remove unencrypted backups
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ backup_directory }}/{{ backup_timestamp }}/servicedb.sql"
+        - "{{ backup_directory }}/{{ backup_timestamp }}/inventorydb.sql"
+      when: vault_db_backup_encryption_key is defined
+    
+    - name: Find old backups
+      find:
+        paths: "{{ backup_directory }}"
+        age: "{{ backup_retention_days }}d"
+        file_type: directory
+      register: old_backups
+    
+    - name: Remove old backups
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ old_backups.files }}"
+      when: old_backups.matched > 0
+

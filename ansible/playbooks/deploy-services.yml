@@ -1,0 +1,88 @@
+---
+- name: Deploy microservices
+  hosts: app_servers
+  become: true
+  become_user: "{{ deployment_user }}"
+  
+  vars_files:
+    - ../vault/secrets.yml
+  
+  tasks:
+    - name: Clone repository
+      git:
+        repo: "{{ git_repository_url }}"
+        dest: "{{ project_path }}"
+        version: "{{ git_branch | default('main') }}"
+        force: yes
+      when: git_repository_url is defined
+    
+    - name: Copy docker-compose files
+      copy:
+        src: "../../docker-compose-files/"
+        dest: "{{ project_path }}/docker-compose-files/"
+        owner: "{{ deployment_user }}"
+        group: "{{ deployment_group }}"
+        mode: '0644'
+    
+    - name: Create .env file from template
+      template:
+        src: ../templates/env.j2
+        dest: "{{ project_path }}/.env"
+        owner: "{{ deployment_user }}"
+        group: "{{ deployment_group }}"
+        mode: '0600'
+    
+    - name: Pull Docker images
+      docker_compose:
+        project_src: "{{ docker_compose_path }}"
+        files:
+          - docker-compose-datasources.yml
+          - docker-compose-services.yml
+        pull: yes
+      environment:
+        DOCKER_HOST: unix:///var/run/docker.sock
+    
+    - name: Stop existing services
+      docker_compose:
+        project_src: "{{ docker_compose_path }}"
+        files:
+          - docker-compose-services.yml
+          - docker-compose-datasources.yml
+        state: absent
+      ignore_errors: yes
+    
+    - name: Start infrastructure services
+      docker_compose:
+        project_src: "{{ docker_compose_path }}"
+        files:
+          - docker-compose-datasources.yml
+        state: present
+    
+    - name: Wait for databases to be ready
+      wait_for:
+        port: "{{ item }}"
+        host: localhost
+        timeout: 60
+      loop:
+        - 5009
+        - 5010
+    
+    - name: Start application services
+      docker_compose:
+        project_src: "{{ docker_compose_path }}"
+        files:
+          - docker-compose-services.yml
+        state: present
+    
+    - name: Verify services are running
+      docker_container_info:
+        name: "{{ item }}"
+      register: container_info
+      loop:
+        - servicedb
+        - inventorydb
+        - kafka
+        - middleware-service
+        - middleware-inventory
+      failed_when: container_info.container.State.Running != true
+

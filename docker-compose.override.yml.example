@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  middleware-service:
+    build:
+      context: ./middleware-service
+      dockerfile: Dockerfile
+    volumes:
+      - ./middleware-service/target:/app/target
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
+
+  middleware-inventory:
+    build:
+      context: ./middleware-inventory
+      dockerfile: Dockerfile
+    volumes:
+      - ./middleware-inventory/target:/app/target
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
+
