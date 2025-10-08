@@ -1,0 +1,12 @@
+---
+environment: staging
+
+postgres_max_connections: 100
+postgres_shared_buffers: 128MB
+
+kafka_heap_opts: "-Xms256m -Xmx1g"
+java_opts: "-Xms256m -Xmx1g"
+
+backup_retention_days: 7
+log_retention_days: 7
+

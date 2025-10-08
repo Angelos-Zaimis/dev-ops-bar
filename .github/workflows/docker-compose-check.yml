@@ -1,0 +1,36 @@
+name: Docker Compose Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Validate docker-compose files
+      run: |
+        docker compose -f docker-compose-files/docker-compose-datasources.yml config
+        docker compose -f docker-compose-files/docker-compose-services.yml config
+    
+    - name: Check compose file syntax
+      run: |
+        docker compose -f docker-compose-files/docker-compose-datasources.yml config --quiet
+        docker compose -f docker-compose-files/docker-compose-services.yml config --quiet
+    
+    - name: Test infrastructure startup
+      run: |
+        docker compose -f docker-compose-files/docker-compose-datasources.yml up -d
+        sleep 30
+        docker compose -f docker-compose-files/docker-compose-datasources.yml ps
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        docker compose -f docker-compose-files/docker-compose-datasources.yml down -v
+

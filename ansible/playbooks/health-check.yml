@@ -1,0 +1,67 @@
+---
+- name: Health check for all services
+  hosts: app_servers
+  
+  tasks:
+    - name: Check Docker service status
+      systemd:
+        name: docker
+      register: docker_status
+    
+    - name: Get running containers
+      docker_host_info:
+      register: docker_info
+    
+    - name: Check container health
+      docker_container_info:
+        name: "{{ item }}"
+      register: container_health
+      loop:
+        - servicedb
+        - inventorydb
+        - kafka
+        - zookeeper
+        - middleware-service
+        - middleware-inventory
+      ignore_errors: yes
+    
+    - name: Display container status
+      debug:
+        msg: "{{ item.item }}: {{ item.container.State.Status | default('not running') }}"
+      loop: "{{ container_health.results }}"
+    
+    - name: Check database connectivity
+      shell: |
+        docker exec {{ item.container }} pg_isready -U {{ item.user }}
+      loop:
+        - { container: 'servicedb', user: 'testuser' }
+        - { container: 'inventorydb', user: 'testuser' }
+      register: db_check
+      changed_when: false
+      ignore_errors: yes
+    
+    - name: Check Kafka broker
+      shell: |
+        docker exec kafka kafka-broker-api-versions --bootstrap-server localhost:9092
+      register: kafka_check
+      changed_when: false
+      ignore_errors: yes
+    
+    - name: Check disk usage
+      shell: df -h {{ project_path }}
+      register: disk_usage
+      changed_when: false
+    
+    - name: Display disk usage
+      debug:
+        var: disk_usage.stdout_lines
+    
+    - name: Check available memory
+      shell: free -h
+      register: memory_info
+      changed_when: false
+    
+    - name: Display memory info
+      debug:
+        var: memory_info.stdout_lines
+

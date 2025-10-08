@@ -1,0 +1,32 @@
+# Vault password file
+.vault_pass
+vault_pass.txt
+*.vault_pass
+
+# Decrypted vault files
+vault/secrets.yml
+!vault/secrets.yml.example
+
+# Ansible retry files
+*.retry
+
+# Fact cache
+/tmp/ansible_facts/
+
+# SSH keys
+*.pem
+*.key
+id_rsa*
+deploy_rsa*
+
+# Host variables with secrets
+host_vars/*/vault.yml
+
+# Logs
+*.log
+ansible.log
+
+# Temporary files
+*.tmp
+.ansible_*
+
