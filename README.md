@@ -84,16 +84,6 @@ docker compose -f docker-compose-files/docker-compose-datasources.yml up -d
 docker compose -f docker-compose-files/docker-compose-services.yml up -d
 ```
 
-## Service Endpoints
-
-| Service              | URL                          | Swagger UI                           |
-|----------------------|------------------------------|--------------------------------------|
-| Middleware Service   | http://localhost:8881        | http://localhost:8881/swagger-ui     |
-| Middleware Inventory | http://localhost:8882        | http://localhost:8882/swagger-ui     |
-| ServiceDB            | localhost:5009               | -                                    |
-| InventoryDB          | localhost:5010               | -                                    |
-| Kafka                | localhost:9092               | -                                    |
-
 ## Configuration
 
 Copy `env.example` to `.env` and adjust values as needed:
