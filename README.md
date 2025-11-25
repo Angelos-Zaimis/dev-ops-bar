@@ -194,8 +194,3 @@ make clean-volumes
 - Ansible 2.14+ (for automation)
 - Python 3.8+
 - 4GB+ available RAM
-
-## License
-
-MIT
-
